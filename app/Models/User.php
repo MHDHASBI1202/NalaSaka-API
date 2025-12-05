@@ -42,4 +42,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Get all of the sakas for the User
+     * Relasi untuk mengambil semua Saka yang dibuat oleh user ini.
+     * @return HasMany
+     */
+    public function sakas(): HasMany
+    {
+        return $this->hasMany(Saka::class, 'user_id');
+    }
 }

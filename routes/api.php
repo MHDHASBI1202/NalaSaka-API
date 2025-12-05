@@ -22,5 +22,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('saka', [SakaController::class, 'store']); // Ini untuk addNewSaka
     
     // Rute Profil (Profile Screen: GET /api/user/profile)
-    Route::get('user/profile', [UserController::class, 'profile']);
+    Route::get('profile', [UserController::class, 'profile']);
 });
