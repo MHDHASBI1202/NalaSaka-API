@@ -1,37 +1,46 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SakaController; // Import baru
-use App\Http\Controllers\UserController; // Import baru
+use App\Http\Controllers\SakaController;
 use App\Http\Controllers\TransactionController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
 
 // Rute Publik (Login/Register)
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
-// Rute yang Membutuhkan Token (Semua rute di bawah ini akan diakses setelah Login)
+// Rute yang Membutuhkan Token
 Route::middleware('auth:sanctum')->group(function () {
     
-    // Rute Produk (Home & Product Screen: GET /api/saka)
+    // Rute Baru: Logout
+    Route::post('logout', [AuthController::class, 'logout']); 
+
+    // Rute Produk (Saka) - Berdasarkan Sumber Asli
     Route::get('saka', [SakaController::class, 'index']);
-    
-    // Rute Detail Produk
     Route::get('saka/{sakaId}', [SakaController::class, 'show']);
+    Route::post('saka', [SakaController::class, 'store']); // Tambah Produk (Upload Foto Barang)
     
-    // Rute Tambah Produk (Upload Foto Barang)
-    Route::post('saka', [SakaController::class, 'store']); // Ini untuk addNewSaka
-    
-    // Rute Profil (Profile Screen: GET /api/user/profile)
-    Route::get('user/profile', [UserController::class, 'profile']);
+    // Rute Profil
+    Route::get('user/profile', [UserController::class, 'profile']); // Menggunakan 'profile' sesuai sumber asli
 
-    // Lihat Riwayat
+    // Rute Baru: Mulai Menjual (Verifikasi Data Penjual)
+    Route::post('user/become-seller', [UserController::class, 'becomeSeller']);
+    
+    // Rute Transaksi (Riwayat & Beli)
     Route::get('/transactions', [TransactionController::class, 'index']); 
-
-    // Beli Barang (Checkout/Pesan Ulang)
-    Route::post('/transactions', [TransactionController::class, 'store']); 
-
-    // Update (Simulasi Admin)
-    Route::post('/transactions/update/{id}', [TransactionController::class, 'updateStatus']); // Update (Simulasi Admin)
+    Route::post('/transactions', [TransactionController::class, 'store']); // Beli Barang (Checkout/Pesan Ulang)
+    Route::post('/transactions/update/{id}', [TransactionController::class, 'updateStatus']); // Update Status
 });
