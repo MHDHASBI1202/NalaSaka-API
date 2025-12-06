@@ -18,7 +18,7 @@ class AuthController extends Controller
             [
                 'name' => 'required',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:6',
+                'password' => 'required|min:8',
                 'phone_number' => 'required|string|max:15', // Baru
                 'address' => 'required|string',             // Baru
                 'is_seller' => 'required|boolean'           // Baru
@@ -29,7 +29,7 @@ class AuthController extends Controller
                     'status' => false,
                     'message' => 'validation error',
                     'errors' => $validateUser->errors()
-                ], 401);
+                ], 422);
             }
 
             $user = User::create([
