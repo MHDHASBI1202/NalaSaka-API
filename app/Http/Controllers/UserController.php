@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Saka;
 use App\Models\User;
 
 class UserController extends Controller
@@ -22,37 +21,9 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'photoUrl' => 'https://i.imgur.com/K1S2Y9C.png', // Placeholder
-                'phoneNumber' => $user->phone_number,
-                'address' => $user->address,
-                'totalSaka' => $totalSaka,
+                'phoneNumber' => '0812xxxxxx',
+                'address' => 'Alamat Pengguna Mocking',
             ]
-        ]);
-    }
-
-    public function profile()
-    {
-        // Ambil user yang sedang login (membutuhkan middleware auth:sanctum)
-        $user = auth()->user();
-
-        if (!$user) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        // --- LOGIKA PENGAMBILAN DATA STATISTIK ---
-        $totalSaka = $user->sakas()->count(); // Hitung total Saka milik user
-
-        $data = [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            // --- DATA STATISTIK DITAMBAHKAN DI SINI ---
-            'total_saka' => $totalSaka,
-        ];
-
-        return response()->json([
-            'error' => false,
-            'message' => 'User profile with statistics retrieved successfully',
-            'user' => $data
         ]);
     }
 }
