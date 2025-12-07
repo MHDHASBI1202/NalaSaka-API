@@ -2,108 +2,68 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
+use App\Models\User; // Model default Laravel
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
-        try {
-            // Validasi input baru
-            $validateUser = Validator::make($request->all(),
-            [
-                'name' => 'required',
-                'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:8',
-                'phone_number' => 'required|string|max:15', // Baru
-                'address' => 'required|string',             // Baru
-                'is_seller' => 'required|boolean'           // Baru
-            ]);
-
-            if($validateUser->fails()){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'errors' => $validateUser->errors()
-                ], 422);
-            }
-
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'phone_number' => $request->phone_number, // Simpan kolom baru
-                'address' => $request->address,           // Simpan kolom baru
-                'is_seller' => $request->is_seller,       // Simpan kolom baru
-            ]);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'User Created Successfully',
-                'token' => $user->createToken("API TOKEN")->plainTextToken
-            ], 200);
-
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
-    }
-
+    // Fungsi LOGIN
     public function login(Request $request)
     {
-        try {
-            $validateUser = Validator::make($request->all(),
-            [
-                'email' => 'required|email',
-                'password' => 'required'
-            ]);
+        // Validasi input email dan password
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-            if($validateUser->fails()){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'errors' => $validateUser->errors()
-                ], 401);
-            }
-
-            if(!Auth::attempt($request->only(['email', 'password']))){
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Email & Password does not match with our record.',
-                ], 401);
-            }
-
-            $user = User::where('email', $request->email)->first();
-
+        // Coba otentikasi (memverifikasi kredensial di tabel users)
+        if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
-                'status' => true,
-                'message' => 'User Logged In Successfully',
-                'token' => $user->createToken("API TOKEN")->plainTextToken,
-                // Tambahkan data is_seller ke respons login
-                'is_seller' => $user->is_seller,
-            ], 200);
-
-        } catch (\Throwable $th) {
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
+                'error' => true,
+                'message' => 'Email atau Password salah.'
+            ], 401); // 401 Unauthorized
         }
-    }
 
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
+        // Otentikasi sukses, ambil user
+        $user = $request->user();
 
+        // Buat token (Pastikan kolom personal_access_tokens ada)
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Kirim respons sesuai format ResponseSaka.kt
         return response()->json([
-            'status' => true,
-            'message' => 'User Logged Out Successfully',
-        ], 200);
+            'error' => false,
+            'message' => 'Login berhasil.',
+            'loginResult' => [
+                'userId' => $user->id,
+                'name' => $user->name,
+                'token' => $token,
+            ]
+        ]);
+    }
+    
+    // Fungsi REGISTER
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|unique:users',
+            'password' => 'required|string|min:8',
+        ]);
+        
+        // Buat user baru
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password), // Enkripsi password
+        ]);
+
+        // Kirim respons sukses sesuai ResponseSaka.kt
+        return response()->json([
+            'error' => false,
+            'message' => 'Pendaftaran berhasil. Silakan Login.',
+        ], 201); // 201 Created
     }
 }
