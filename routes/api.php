@@ -33,5 +33,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transactions', [TransactionController::class, 'store']); 
 
     // Update (Simulasi Admin)
-    Route::post('/transactions/update/{id}', [TransactionController::class, 'updateStatus']); // Update (Simulasi Admin)
+    Route::post('/transactions/update/{id}', [TransactionController::class, 'updateStatus']);
 });
