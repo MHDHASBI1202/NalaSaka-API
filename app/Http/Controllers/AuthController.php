@@ -47,18 +47,24 @@ class AuthController extends Controller
     // Fungsi REGISTER
     public function register(Request $request)
     {
+        // --- PERUBAHAN VALIDASI BARU ---
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:8',
+            'phone_number' => 'nullable|string|max:15', // Opsional, bisa diubah ke 'required'
+            'address' => 'nullable|string|max:500', // Opsional, bisa diubah ke 'required'
+            'password' => 'required|string|min:8|confirmed', // 'confirmed' akan mencari field 'password_confirmation'
         ]);
         
         // Buat user baru
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'address' => $request->address,
             'password' => Hash::make($request->password), // Enkripsi password
         ]);
+        // -----------------------------
 
         // Kirim respons sukses sesuai ResponseSaka.kt
         return response()->json([
