@@ -26,8 +26,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rute Profil (Profile Screen: GET /api/user/profile)
     Route::get('user/profile', [UserController::class, 'profile']);
     
-    // Rute Update Profil (Menambahkan fungsionalitas edit: PATCH /api/user/profile)
+    // Rute Update Profil
     Route::patch('user/profile', [UserController::class, 'updateProfile']);
+    
+    // NEW: Rute untuk mengaktifkan mode penjual
+    Route::post('user/activate-seller', [UserController::class, 'activateSellerMode']);
 
     // Lihat Riwayat
     Route::get('/transactions', [TransactionController::class, 'index']); 

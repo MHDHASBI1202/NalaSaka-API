@@ -10,10 +10,8 @@ class UserController extends Controller
     // Merespons GET /api/user/profile
     public function profile(Request $request)
     {
-        $user = $request->user(); // Mengambil data user dari token
+        $user = $request->user();
 
-        // Mengambil data user dari database (sesuai Model User.php)
-        // MENGHILANGKAN DATA MOCK
         return response()->json([
             'error' => false,
             'message' => 'Detail Profil dimuat dari database.',
@@ -21,27 +19,34 @@ class UserController extends Controller
                 'userId' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'photoUrl' => 'https://i.imgur.com/K1S2Y9C.png', // Placeholder (URL foto tidak ada di kolom User yang tersedia)
-                'phoneNumber' => $user->phone_number, // Menggunakan data dari DB
-                'address' => $user->address, // Menggunakan data dari DB
+                'photoUrl' => 'https://i.imgur.com/K1S2Y9C.png', // Placeholder
+                'phoneNumber' => $user->phone_number,
+                'address' => $user->address,
+                'role' => $user->role ?: 'customer', // NEW: Default 'customer'
+                'storeName' => $user->store_name, // NEW
             ]
         ]);
     }
     
-    // Merespons PATCH /api/user/profile untuk update profil (name, phone_number, address)
+    // Merespons PATCH /api/user/profile untuk update profil
     public function updateProfile(Request $request)
     {
         $user = $request->user();
         
-        // Validasi input. 'sometimes' agar user bisa hanya mengupdate satu field.
-        // 'email' tidak diizinkan untuk di-update di sini, sesuai permintaan.
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'phone_number' => 'sometimes|required|string|max:15',
             'address' => 'sometimes|required|string|max:255',
+            // NEW: store_name opsional, hanya divalidasi jika user sudah jadi seller
+            'store_name' => 'sometimes|nullable|string|max:255|unique:users,store_name,'.$user->id,
         ]);
+        
+        // Jika user adalah seller, kita izinkan update store_name
+        if ($user->role === 'seller' && isset($validated['store_name'])) {
+            $user->store_name = $validated['store_name'];
+            unset($validated['store_name']);
+        }
 
-        // Update data user
         $user->update($validated);
 
         // Ambil data terbaru untuk dikembalikan ke klien
@@ -52,9 +57,63 @@ class UserController extends Controller
                 'userId' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'photoUrl' => 'https://i.imgur.com/K1S2Y9C.png', // Placeholder
+                'photoUrl' => 'https://i.imgur.com/K1S2Y9C.png',
                 'phoneNumber' => $user->phone_number,
                 'address' => $user->address,
+                'role' => $user->role,
+                'storeName' => $user->store_name,
+            ]
+        ]);
+    }
+
+    // NEW: Metode untuk mengaktifkan mode penjual
+    // Merespons POST /api/user/activate-seller
+    public function activateSellerMode(Request $request)
+    {
+        $user = $request->user();
+
+        // Cek apakah user sudah jadi seller
+        if ($user->role === 'seller') {
+            return response()->json([
+                'error' => true,
+                'message' => 'Anda sudah terdaftar sebagai penjual.',
+                'user' => [
+                    'userId' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'photoUrl' => 'https://i.imgur.com/K1S2Y9C.png',
+                    'phoneNumber' => $user->phone_number,
+                    'address' => $user->address,
+                    'role' => $user->role,
+                    'storeName' => $user->store_name,
+                ]
+            ], 400); 
+        }
+
+        // Validasi input untuk nama toko
+        $validated = $request->validate([
+            'store_name' => 'required|string|max:255|unique:users,store_name',
+        ]);
+        
+        // Update role menjadi 'seller' dan simpan nama toko
+        $user->update([
+            'role' => 'seller',
+            'store_name' => $validated['store_name']
+        ]);
+
+        // Ambil data terbaru untuk dikembalikan ke klien
+        return response()->json([
+            'error' => false,
+            'message' => 'Mode penjual berhasil diaktifkan.',
+            'user' => [
+                'userId' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'photoUrl' => 'https://i.imgur.com/K1S2Y9C.png',
+                'phoneNumber' => $user->phone_number,
+                'address' => $user->address,
+                'role' => $user->role,
+                'storeName' => $user->store_name,
             ]
         ]);
     }

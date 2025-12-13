@@ -23,6 +23,8 @@ class User extends Authenticatable
         'password',
         'phone_number', 
         'address',  
+        'role', // NEW: Ditambahkan untuk mode penjual/customer
+        'store_name', // NEW: Ditambahkan untuk nama toko
     ];
 
     /**
