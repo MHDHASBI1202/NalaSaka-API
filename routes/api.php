@@ -25,6 +25,9 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Rute Profil (Profile Screen: GET /api/user/profile)
     Route::get('user/profile', [UserController::class, 'profile']);
+    
+    // Rute Update Profil (Menambahkan fungsionalitas edit: PATCH /api/user/profile)
+    Route::patch('user/profile', [UserController::class, 'updateProfile']);
 
     // Lihat Riwayat
     Route::get('/transactions', [TransactionController::class, 'index']); 
