@@ -22,6 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Rute Tambah Produk (Upload Foto Barang)
     Route::post('saka', [SakaController::class, 'store']); // Ini untuk addNewSaka
+
+    // Rute Produk Toko Saya (Stok)
+    Route::get('saka/my-products', [SakaController::class, 'myProducts']);
     
     // Rute Profil (Profile Screen: GET /api/user/profile)
     Route::get('user/profile', [UserController::class, 'profile']);

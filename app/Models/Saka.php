@@ -9,9 +9,14 @@ class Saka extends Model
 {
     use HasFactory;
     
-    // Nama tabel di database
     protected $table = 'sakas';
     
-    // Kolom yang boleh diisi
-    protected $fillable = ['name', 'description', 'price', 'photo_url'];
+    // PERUBAHAN: Tambahkan 'user_id'
+    protected $fillable = ['user_id', 'name', 'description', 'price', 'photo_url'];
+
+    // Relasi ke User (Penjual)
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }
