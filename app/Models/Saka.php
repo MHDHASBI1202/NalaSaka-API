@@ -11,10 +11,9 @@ class Saka extends Model
     
     protected $table = 'sakas';
     
-    // PERUBAHAN: Tambahkan 'user_id'
-    protected $fillable = ['user_id', 'name', 'description', 'price', 'photo_url'];
+    // PERUBAHAN: Tambahkan 'category'
+    protected $fillable = ['user_id', 'name', 'category', 'description', 'price', 'stock', 'photo_url'];
 
-    // Relasi ke User (Penjual)
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

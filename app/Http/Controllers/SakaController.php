@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Saka;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage; // Pastikan import ini ada
+use Illuminate\Support\Facades\Storage;
 
 class SakaController extends Controller
 {
@@ -13,14 +13,7 @@ class SakaController extends Controller
     {
         $sakas = Saka::all();
         $listSaka = $sakas->map(function($item) {
-            return [
-                'id' => (string) $item->id,
-                'name' => $item->name,
-                'description' => $item->description,
-                'price' => $item->price,
-                'photoUrl' => $item->photo_url,
-                'sellerId' => (string) $item->user_id, // Opsional: kirim info penjual
-            ];
+            return $this->formatSaka($item);
         });
 
         return response()->json([
@@ -30,22 +23,13 @@ class SakaController extends Controller
         ], 200);
     }
 
-    // NEW: Endpoint untuk mengambil produk milik user yang sedang login (Toko Saya)
     public function myProducts(Request $request)
     {
         $user = $request->user();
-        
-        // Ambil produk dimana user_id = ID user login
         $sakas = Saka::where('user_id', $user->id)->get();
 
         $listSaka = $sakas->map(function($item) {
-            return [
-                'id' => (string) $item->id,
-                'name' => $item->name,
-                'description' => $item->description,
-                'price' => $item->price,
-                'photoUrl' => $item->photo_url,
-            ];
+            return $this->formatSaka($item);
         });
 
         return response()->json([
@@ -65,35 +49,25 @@ class SakaController extends Controller
         return response()->json([
             'error' => false,
             'message' => 'Detail produk ditemukan',
-            'saka' => [
-                'id' => (string) $saka->id,
-                'name' => $saka->name,
-                'description' => $saka->description,
-                'price' => $saka->price,
-                'photoUrl' => $saka->photo_url,
-                'sellerId' => (string) $saka->user_id
-            ]
+            'saka' => $this->formatSaka($saka)
         ], 200);
     }
 
-    // UPDATE FUNGSI STORE (UPLOAD)
+    // UPDATE: Tambah Input Kategori
     public function store(Request $request)
     {
         $user = $request->user();
 
-        // 1. Cek apakah user adalah Seller
         if ($user->role !== 'seller') {
-            return response()->json([
-                'error' => true,
-                'message' => 'Hanya akun Penjual yang boleh mengunggah barang.'
-            ], 403);
+            return response()->json(['error' => true, 'message' => 'Hanya akun Penjual yang boleh mengunggah barang.'], 403);
         }
 
-        // 2. Validasi
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'category' => 'required|string', // Validasi Kategori
             'description' => 'required|string',
-            'price' => 'required|numeric',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -101,30 +75,100 @@ class SakaController extends Controller
             return response()->json(['error' => true, 'message' => $validator->errors()->first()], 400);
         }
 
-        // 3. Upload File
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
-            // Simpan di storage/app/public/sakas
             $path = $file->store('sakas', 'public'); 
-            // Buat URL lengkap
             $photoUrl = url('storage/' . $path);
         } else {
             return response()->json(['error' => true, 'message' => 'File foto wajib diunggah'], 400);
         }
 
-        // 4. Simpan ke Database dengan user_id
         $saka = Saka::create([
-            'user_id' => $user->id, // PENTING: Menandai pemilik barang
+            'user_id' => $user->id,
             'name' => $request->name,
+            'category' => $request->category, // Simpan Kategori
             'description' => $request->description,
             'price' => $request->price,
+            'stock' => $request->stock,
             'photo_url' => $photoUrl,
         ]);
 
         return response()->json([
             'error' => false,
             'message' => 'Produk berhasil diunggah ke Toko Anda!',
-            'saka' => $saka
+            'saka' => $this->formatSaka($saka)
         ], 201);
+    }
+
+    // NEW: Update Stok Barang
+    public function updateStock(Request $request, $id)
+    {
+        $user = $request->user();
+        $saka = Saka::find($id);
+
+        if (!$saka) {
+            return response()->json(['error' => true, 'message' => 'Produk tidak ditemukan'], 404);
+        }
+
+        // Pastikan yang update adalah pemilik barang
+        if ($saka->user_id !== $user->id) {
+            return response()->json(['error' => true, 'message' => 'Anda tidak berhak mengubah produk ini'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'stock' => 'required|integer|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => true, 'message' => $validator->errors()->first()], 400);
+        }
+
+        $saka->update(['stock' => $request->stock]);
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Stok berhasil diperbarui',
+            'saka' => $this->formatSaka($saka)
+        ]);
+    }
+
+    // NEW: Hapus Barang
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+        $saka = Saka::find($id);
+
+        if (!$saka) {
+            return response()->json(['error' => true, 'message' => 'Produk tidak ditemukan'], 404);
+        }
+
+        if ($saka->user_id !== $user->id) {
+            return response()->json(['error' => true, 'message' => 'Anda tidak berhak menghapus produk ini'], 403);
+        }
+
+        // Hapus file foto (opsional, agar storage tidak penuh)
+        // $photoPath = str_replace(url('storage/'), '', $saka->photo_url);
+        // Storage::disk('public')->delete($photoPath);
+
+        $saka->delete();
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Produk berhasil dihapus'
+        ]);
+    }
+
+    // Helper Private untuk format JSON
+    private function formatSaka($item) {
+        return [
+            'id' => (string) $item->id,
+            'name' => $item->name,
+            'category' => $item->category, // Kirim Kategori
+            'description' => $item->description,
+            'price' => (int) $item->price,
+            'stock' => (int) $item->stock,
+            'photoUrl' => $item->photo_url,
+            'sellerId' => (string) $item->user_id,
+        ];
     }
 }

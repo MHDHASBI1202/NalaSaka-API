@@ -40,6 +40,7 @@ class AuthController extends Controller
                 'userId' => $user->id,
                 'name' => $user->name,
                 'token' => $token,
+                'role' => $user->role, // [PERBAIKAN] Kirim role (customer/seller) ke Android
             ]
         ]);
     }
@@ -63,6 +64,7 @@ class AuthController extends Controller
             'phone_number' => $request->phone_number,
             'address' => $request->address,
             'password' => Hash::make($request->password), // Enkripsi password
+            // role default sudah diatur di database migration sebagai 'customer'
         ]);
         // -----------------------------
 
