@@ -1,10 +1,11 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SakaController; // Import baru
-use App\Http\Controllers\UserController; // Import baru
+use App\Http\Controllers\SakaController; 
+use App\Http\Controllers\UserController; 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ReviewController; // Import Controller Review
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -15,6 +16,7 @@ Route::post('login', [AuthController::class, 'login']);
 // Rute yang Membutuhkan Token (Semua rute di bawah ini akan diakses setelah Login)
 Route::middleware('auth:sanctum')->group(function () {
     
+    // --- MODUL PRODUK ---
     // Rute Produk (Home & Product Screen: GET /api/saka)
     Route::get('saka', [SakaController::class, 'index']);
     
@@ -35,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Hapus Barang
     Route::delete('saka/{id}', [SakaController::class, 'destroy']);
     
+    // --- MODUL PROFIL ---
     // Rute Profil (Profile Screen: GET /api/user/profile)
     Route::get('user/profile', [UserController::class, 'profile']);
     
@@ -44,9 +47,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Rute untuk mengaktifkan mode penjual
     Route::post('user/activate-seller', [UserController::class, 'activateSellerMode']);
 
+    // --- MODUL DASHBOARD & LAPORAN ---
     // Rute Statistik Dashboard Seller
     Route::get('seller/stats', [DashboardController::class, 'sellerStats']);
 
+    // --- MODUL TRANSAKSI ---
     // Lihat Riwayat
     Route::get('/transactions', [TransactionController::class, 'index']); 
 
@@ -55,4 +60,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Update (Simulasi Admin)
     Route::post('/transactions/update/{id}', [TransactionController::class, 'updateStatus']);
+
+    // --- MODUL REPUTASI & ANALISIS (NEW - TUGAS YANG MULIA) ---
+    // 1. Kirim Ulasan
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    
+    // 2. Lihat Ulasan Produk Tertentu
+    Route::get('/saka/{sakaId}/reviews', [ReviewController::class, 'index']);
 });
