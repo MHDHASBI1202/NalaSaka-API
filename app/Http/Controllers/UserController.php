@@ -28,6 +28,7 @@ class UserController extends Controller
                 'address' => $user->address,
                 'role' => $user->role ?: 'customer',
                 'storeName' => $user->store_name,
+                'verificationStatus' => $user->verification_status ?? 'none',
             ]
         ]);
     }
@@ -69,6 +70,7 @@ class UserController extends Controller
                 'address' => $user->address,
                 'role' => $user->role,
                 'storeName' => $user->store_name,
+                'verificationStatus' => $user->verification_status ?? 'none',
             ]
         ]);
     }
@@ -94,6 +96,7 @@ class UserController extends Controller
                     'address' => $user->address,
                     'role' => $user->role,
                     'storeName' => $user->store_name,
+                    'verificationStatus' => $user->verification_status ?? 'none',
                 ]
             ], 400); 
         }
@@ -124,7 +127,53 @@ class UserController extends Controller
                 'address' => $user->address,
                 'role' => $user->role,
                 'storeName' => $user->store_name,
+                'verificationStatus' => $user->verification_status ?? 'none',
             ]
         ]);
+
+        
+    }
+
+    // Merespons POST /api/user/upload-certification
+    public function uploadCertification(Request $request)
+    {
+        $user = $request->user();
+
+        // Validasi: Hanya role seller yang butuh verifikasi
+        if ($user->role !== 'seller') {
+            return response()->json(['error' => true, 'message' => 'Hanya penjual yang dapat mengajukan verifikasi.'], 403);
+        }
+
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+        ]);
+
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $path = $file->store('certifications', 'public');
+            $url = url('storage/' . $path);
+
+            $user->update([
+                'certification_url' => $url,
+                'verification_status' => 'verified' // [SIMULASI] Langsung verified agar bisa langsung dites di Android
+            ]);
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Dokumen berhasil diunggah! Akun Anda kini Terverifikasi.',
+                'user' => [
+                    // Return data user terupdate (sama seperti response profile)
+                    'userId' => (string) $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'photoUrl' => $user->photo_url,
+                    'role' => $user->role,
+                    'storeName' => $user->store_name,
+                    'verificationStatus' => $user->verification_status // Kirim status baru
+                ]
+            ]);
+        }
+
+        return response()->json(['error' => true, 'message' => 'Gagal mengunggah file.'], 400);
     }
 }

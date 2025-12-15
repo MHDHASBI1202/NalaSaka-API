@@ -61,6 +61,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Update (Simulasi Admin)
     Route::post('/transactions/update/{id}', [TransactionController::class, 'updateStatus']);
 
+    // Verifikasi Petani
+    Route::post('user/upload-certification', [UserController::class, 'uploadCertification']);
+
     // --- MODUL REPUTASI & ANALISIS (NEW - TUGAS YANG MULIA) ---
     // 1. Kirim Ulasan
     Route::post('/reviews', [ReviewController::class, 'store']);

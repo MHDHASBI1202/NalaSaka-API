@@ -160,15 +160,21 @@ class SakaController extends Controller
 
     // Helper Private untuk format JSON
     private function formatSaka($item) {
+        // Ambil user pemilik produk
+        $seller = $item->user; 
+        $isVerified = $seller ? ($seller->verification_status === 'verified') : false;
+
         return [
             'id' => (string) $item->id,
             'name' => $item->name,
-            'category' => $item->category, // Kirim Kategori
+            'category' => $item->category,
             'description' => $item->description,
             'price' => (int) $item->price,
             'stock' => (int) $item->stock,
             'photoUrl' => $item->photo_url,
             'sellerId' => (string) $item->user_id,
+            // [NEW] Kirim status verified ke Android
+            'isSellerVerified' => $isVerified 
         ];
     }
 }
