@@ -1,11 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SakaController; 
-use App\Http\Controllers\UserController; 
+use App\Http\Controllers\SakaController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\ReviewController; // Import Controller Review
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ReportController; // Pastikan ini di-import
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -13,61 +14,37 @@ use Illuminate\Http\Request;
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
-// Rute yang Membutuhkan Token (Semua rute di bawah ini akan diakses setelah Login)
+// --- [PERBAIKAN] RUTE KHUSUS CETAK PDF (DI LUAR MIDDLEWARE) ---
+// Kita taruh di luar 'auth:sanctum' agar tidak dicegat middleware.
+// Validasi token dilakukan manual di dalam ReportController.
+Route::get('seller/report/download', [ReportController::class, 'downloadReport']);
+
+// Rute yang Membutuhkan Token (Header Authorization)
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // --- MODUL PRODUK ---
-    // Rute Produk (Home & Product Screen: GET /api/saka)
     Route::get('saka', [SakaController::class, 'index']);
-    
-    // [PERBAIKAN PENTING] 
-    // Rute 'my-products' HARUS diletakkan SEBELUM 'saka/{sakaId}'
-    // Agar kata "my-products" tidak dianggap sebagai ID produk.
     Route::get('saka/my-products', [SakaController::class, 'myProducts']);
-
-    // Rute Detail Produk (Wildcard {sakaId} menangkap semua ID setelah /saka/)
     Route::get('saka/{sakaId}', [SakaController::class, 'show']);
-    
-    // Rute Tambah Produk (Upload Foto Barang)
-    Route::post('saka', [SakaController::class, 'store']); 
-
-    // Update Stok
+    Route::post('saka', [SakaController::class, 'store']);
     Route::patch('saka/{id}/stock', [SakaController::class, 'updateStock']);
-    
-    // Hapus Barang
     Route::delete('saka/{id}', [SakaController::class, 'destroy']);
-    
-    // --- MODUL PROFIL ---
-    // Rute Profil (Profile Screen: GET /api/user/profile)
-    Route::get('user/profile', [UserController::class, 'profile']);
-    
-    // Rute Update Profil
-    Route::patch('user/profile', [UserController::class, 'updateProfile']);
-    
-    // Rute untuk mengaktifkan mode penjual
-    Route::post('user/activate-seller', [UserController::class, 'activateSellerMode']);
 
-    // --- MODUL DASHBOARD & LAPORAN ---
-    // Rute Statistik Dashboard Seller
+    // --- MODUL PROFIL ---
+    Route::get('user/profile', [UserController::class, 'profile']);
+    Route::patch('user/profile', [UserController::class, 'updateProfile']);
+    Route::post('user/activate-seller', [UserController::class, 'activateSellerMode']);
+    Route::post('user/upload-certification', [UserController::class, 'uploadCertification']);
+
+    // --- MODUL DASHBOARD ---
     Route::get('seller/stats', [DashboardController::class, 'sellerStats']);
 
     // --- MODUL TRANSAKSI ---
-    // Lihat Riwayat
-    Route::get('/transactions', [TransactionController::class, 'index']); 
-
-    // Beli Barang (Checkout/Pesan Ulang)
-    Route::post('/transactions', [TransactionController::class, 'store']); 
-
-    // Update (Simulasi Admin)
+    Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::post('/transactions', [TransactionController::class, 'store']);
     Route::post('/transactions/update/{id}', [TransactionController::class, 'updateStatus']);
 
-    // Verifikasi Petani
-    Route::post('user/upload-certification', [UserController::class, 'uploadCertification']);
-
-    // --- MODUL REPUTASI & ANALISIS (NEW - TUGAS YANG MULIA) ---
-    // 1. Kirim Ulasan
+    // --- MODUL REPUTASI ---
     Route::post('/reviews', [ReviewController::class, 'store']);
-    
-    // 2. Lihat Ulasan Produk Tertentu
     Route::get('/saka/{sakaId}/reviews', [ReviewController::class, 'index']);
 });
