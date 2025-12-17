@@ -47,4 +47,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- MODUL REPUTASI ---
     Route::post('/reviews', [ReviewController::class, 'store']);
     Route::get('/saka/{sakaId}/reviews', [ReviewController::class, 'index']);
+
+    // --- MODUL WISHLIST ---
+    Route::post('wishlist/toggle', [App\Http\Controllers\WishlistController::class, 'toggle']);
+    Route::get('wishlist/check/{sakaId}', [App\Http\Controllers\WishlistController::class, 'check']);
+    Route::get('wishlist', [App\Http\Controllers\WishlistController::class, 'index']);
 });

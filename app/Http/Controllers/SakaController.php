@@ -9,9 +9,31 @@ use Illuminate\Support\Facades\Storage;
 
 class SakaController extends Controller
 {
-    public function index()
+    /**
+     * Menampilkan semua produk dengan opsi Sorting
+     * GET /api/saka?sort=price_asc
+     */
+    public function index(Request $request)
     {
-        $sakas = Saka::all();
+        // Ambil parameter sort dari URL, misal: /api/saka?sort=price_asc
+        $sort = $request->query('sort');
+
+        // Gunakan 'with' untuk Eager Loading relasi user agar performa lebih cepat
+        $query = Saka::with('user');
+
+        // Logika Sorting Server-Side
+        if ($sort === 'price_asc') {
+            $query->orderBy('price', 'asc');
+        } elseif ($sort === 'price_desc') {
+            $query->orderBy('price', 'desc');
+        } else {
+            $query->orderBy('created_at', 'desc'); // Default produk terbaru di atas
+        }
+
+        // Eksekusi Query
+        $sakas = $query->get();
+
+        // Format data output
         $listSaka = $sakas->map(function($item) {
             return $this->formatSaka($item);
         });
@@ -53,7 +75,7 @@ class SakaController extends Controller
         ], 200);
     }
 
-    // UPDATE: Tambah Input Kategori
+    // Tambah Produk Baru
     public function store(Request $request)
     {
         $user = $request->user();
@@ -86,7 +108,7 @@ class SakaController extends Controller
         $saka = Saka::create([
             'user_id' => $user->id,
             'name' => $request->name,
-            'category' => $request->category, // Simpan Kategori
+            'category' => $request->category,
             'description' => $request->description,
             'price' => $request->price,
             'stock' => $request->stock,
@@ -100,7 +122,7 @@ class SakaController extends Controller
         ], 201);
     }
 
-    // NEW: Update Stok Barang
+    // Update Stok Barang
     public function updateStock(Request $request, $id)
     {
         $user = $request->user();
@@ -132,7 +154,7 @@ class SakaController extends Controller
         ]);
     }
 
-    // NEW: Hapus Barang
+    // Hapus Barang
     public function destroy(Request $request, $id)
     {
         $user = $request->user();
@@ -158,9 +180,9 @@ class SakaController extends Controller
         ]);
     }
 
-    // Helper Private untuk format JSON
+    // Helper Private untuk format JSON output
     private function formatSaka($item) {
-        // Ambil user pemilik produk
+        // Ambil user pemilik produk (gunakan relasi yang sudah di-load)
         $seller = $item->user; 
         $isVerified = $seller ? ($seller->verification_status === 'verified') : false;
 
@@ -173,7 +195,7 @@ class SakaController extends Controller
             'stock' => (int) $item->stock,
             'photoUrl' => $item->photo_url,
             'sellerId' => (string) $item->user_id,
-            // [NEW] Kirim status verified ke Android
+            // Kirim status verified ke Android
             'isSellerVerified' => $isVerified 
         ];
     }
