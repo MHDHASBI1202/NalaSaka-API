@@ -52,4 +52,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('wishlist/toggle', [App\Http\Controllers\WishlistController::class, 'toggle']);
     Route::get('wishlist/check/{sakaId}', [App\Http\Controllers\WishlistController::class, 'check']);
     Route::get('wishlist', [App\Http\Controllers\WishlistController::class, 'index']);
+
+    // --- MODUL KERANJANG ---
+    Route::get('cart', [App\Http\Controllers\CartController::class, 'index']);
+    Route::post('cart', [App\Http\Controllers\CartController::class, 'addToCart']);
+    Route::patch('cart/{id}', [App\Http\Controllers\CartController::class, 'updateQuantity']);
+    Route::delete('cart/{id}', [App\Http\Controllers\CartController::class, 'destroy']);
+    Route::post('cart/checkout', [App\Http\Controllers\CartController::class, 'checkout']);
 });
