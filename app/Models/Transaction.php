@@ -11,7 +11,8 @@ class Transaction extends Model
 
     protected $fillable = [
         'user_id', 'saka_id', 'quantity', 'total_price', 
-        'status', 'current_location', 'resi_number'
+        'status', 'current_location', 'resi_number',
+        'payment_method'
     ];
 
     // Relasi: Transaksi milik satu Produk (Saka)

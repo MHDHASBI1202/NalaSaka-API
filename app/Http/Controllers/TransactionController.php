@@ -34,11 +34,13 @@ class TransactionController extends Controller
 
             return [
                 'id' => (string) $item->id,
+                'sakaId' => (string) $item->saka_id,
                 'productName' => $productName,
                 'productImage' => $productImage,
                 'price' => $item->total_price,
                 'status' => $item->status, 
                 'date' => $item->created_at->format('d M Y'),
+                'paymentMethod' => $item->payment_method,
                 'tracking' => [
                     'location' => $item->current_location ?? 'Belum ada update lokasi',
                     'resi' => $item->resi_number ?? '-'
@@ -61,6 +63,7 @@ class TransactionController extends Controller
             'user_id' => 'required',
             'saka_id' => 'required', // ID Produk yang dibeli
             'quantity' => 'required|integer|min:1',
+            'payment_method' => 'required|in:CASH,TRANSFER,EWALLET',
         ]);
 
         if ($validator->fails()) {
@@ -82,6 +85,7 @@ class TransactionController extends Controller
             'quantity' => $request->quantity,
             'total_price' => $totalPrice,
             'status' => 'DIPROSES', // Status awal
+            'payment_method' => $request->payment_method,
             'current_location' => 'Gudang Penjual', // Lokasi awal
         ]);
 

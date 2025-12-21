@@ -106,6 +106,10 @@ class CartController extends Controller
     // 5. CHECKOUT SEMUA (Transaksi Masal)
     public function checkout(Request $request)
     {
+        $request->validate([
+            'payment_method' => 'required|in:CASH,TRANSFER,EWALLET', // Validasi input
+        ]);
+
         $user = $request->user();
         $cartItems = Cart::with('saka')->where('user_id', $user->id)->get();
 
@@ -131,7 +135,8 @@ class CartController extends Controller
                     'quantity' => $item->quantity,
                     'total_price' => $item->saka->price * $item->quantity,
                     'status' => 'DIPROSES',
-                    'current_location' => 'Diproses Penjual'
+                    'current_location' => 'Diproses Penjual',
+                    'payment_method' => $request->payment_method
                 ]);
             }
 
