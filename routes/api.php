@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ReportController; // Pastikan ini di-import
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -13,6 +14,8 @@ use Illuminate\Http\Request;
 // Rute Publik (Login/Register)
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
+Route::post('password/forgot', [PasswordController::class, 'forgotPassword']);
+Route::post('password/reset', [PasswordController::class, 'resetPassword']);
 
 // --- [PERBAIKAN] RUTE KHUSUS CETAK PDF (DI LUAR MIDDLEWARE) ---
 // Kita taruh di luar 'auth:sanctum' agar tidak dicegat middleware.
@@ -35,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('user/profile', [UserController::class, 'updateProfile']);
     Route::post('user/activate-seller', [UserController::class, 'activateSellerMode']);
     Route::post('user/upload-certification', [UserController::class, 'uploadCertification']);
+
+    // === RUTE AUTHENTICATED (Perlu Login) ===
+    Route::post('user/change-password', [PasswordController::class, 'changePassword']);
 
     // --- MODUL DASHBOARD ---
     Route::get('seller/stats', [DashboardController::class, 'sellerStats']);
