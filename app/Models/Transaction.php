@@ -10,10 +10,10 @@ class Transaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'saka_id', 'quantity', 'total_price', 
-        'status', 'current_location', 'resi_number',
-        'payment_method'
-    ];
+    'user_id', 'saka_id', 'quantity', 'status', 'payment_method',
+    'latitude', 'longitude', 'full_address',
+    'subtotal', 'shipping_cost', 'total_amount', 'shipping_method'
+];
 
     // Relasi: Transaksi milik satu Produk (Saka)
     public function saka()

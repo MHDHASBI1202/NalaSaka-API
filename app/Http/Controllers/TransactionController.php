@@ -58,43 +58,28 @@ class TransactionController extends Controller
     // 2. BUAT PESANAN BARU (Checkout / Pesan Ulang)
     // POST /api/transactions
     public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required',
-            'saka_id' => 'required', // ID Produk yang dibeli
-            'quantity' => 'required|integer|min:1',
-            'payment_method' => 'required|in:CASH,TRANSFER,EWALLET',
-        ]);
+{
+    $user = $request->user();
+    $request->validate([
+        'saka_id' => 'required',
+        'quantity' => 'required|integer',
+        'payment_method' => 'required|string',
+        'full_address' => 'required|string',
+        'subtotal' => 'required|integer',
+        'total_amount' => 'required|integer',
+        'shipping_method' => 'required|string',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['error' => true, 'message' => $validator->errors()->first()], 400);
-        }
+    // Jika transfer, status 'pending_payment'. Jika COD, 'processed'.
+    $status = ($request->payment_method === 'transfer') ? 'pending_payment' : 'processed';
 
-        // Ambil harga produk
-        $product = Saka::find($request->saka_id);
-        if(!$product) {
-            return response()->json(['error' => true, 'message' => 'Produk tidak ditemukan'], 404);
-        }
+    $transaction = Transaction::create(array_merge(
+        $request->all(), 
+        ['user_id' => $user->id, 'status' => $status]
+    ));
 
-        $totalPrice = $product->price * $request->quantity;
-
-        // Simpan Transaksi
-        $transaction = Transaction::create([
-            'user_id' => $request->user_id,
-            'saka_id' => $request->saka_id,
-            'quantity' => $request->quantity,
-            'total_price' => $totalPrice,
-            'status' => 'DIPROSES', // Status awal
-            'payment_method' => $request->payment_method,
-            'current_location' => 'Gudang Penjual', // Lokasi awal
-        ]);
-
-        return response()->json([
-            'error' => false,
-            'message' => 'Pesanan berhasil dibuat!',
-            'transaction_id' => $transaction->id
-        ], 201);
-    }
+    return response()->json(['error' => false, 'message' => 'Pesanan berhasil dibuat!', 'transaction' => $transaction]);
+}
     
     // 3. UPDATE STATUS (Untuk Simulasi Admin/Kurir Update Lokasi)
     // POST /api/transactions/update/{id}

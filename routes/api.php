@@ -70,4 +70,5 @@ Route::middleware('auth:sanctum')->group(function () {
     // Fitur Follow
     Route::post('user/follow', [FollowController::class, 'toggle']);
     Route::get('user/follow/check/{targetId}', [FollowController::class, 'checkStatus']);
+    Route::put('/user/address', [UserController::class, 'updateAddress']);
 });

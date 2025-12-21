@@ -25,7 +25,8 @@ class CartController extends Controller
                 'price' => $item->saka->price,
                 'photo_url' => $item->saka->photo_url,
                 'quantity' => $item->quantity,
-                'stock_available' => $item->saka->stock
+                'stock_available' => $item->saka->stock,
+                'store_name' => $item->saka->user->store_name,
             ];
         });
 

@@ -180,4 +180,10 @@ class UserController extends Controller
 
         return response()->json(['error' => true, 'message' => 'Gagal mengunggah file.'], 400);
     }
+    public function updateAddress(Request $request) {
+        $user = $request->user();
+        $request->validate(['address' => 'required|string']);
+        $user->update(['address' => $request->address]);
+        return response()->json(['message' => 'Alamat utama berhasil diperbarui']);
+    }
 }
