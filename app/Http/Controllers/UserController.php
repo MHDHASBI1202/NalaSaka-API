@@ -12,23 +12,27 @@ class UserController extends Controller
     {
         $user = $request->user();
         
-        // LOGIKA BARU: Gunakan UI Avatars untuk gambar dinamis jika user belum punya foto
-        // Ini menggantikan placeholder statis imgur yang sebelumnya
+        // Hitung jumlah
+        $followersCount = $user->followers()->count();
+        $followingCount = $user->following()->count();
+
         $photoUrl = $user->photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=D57B0E&color=fff';
 
         return response()->json([
             'error' => false,
-            'message' => 'Detail Profil dimuat dari database.',
+            'message' => 'Detail Profil dimuat.',
             'user' => [
                 'userId' => (string) $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'photoUrl' => $photoUrl, // Menggunakan URL dinamis
+                'photoUrl' => $photoUrl,
                 'phoneNumber' => $user->phone_number,
                 'address' => $user->address,
                 'role' => $user->role ?: 'customer',
                 'storeName' => $user->store_name,
                 'verificationStatus' => $user->verification_status ?? 'none',
+                'followersCount' => $followersCount,
+                'followingCount' => $followingCount,
             ]
         ]);
     }

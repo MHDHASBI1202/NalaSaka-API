@@ -7,7 +7,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\PasswordController;
-use App\Http\Controllers\ReportController; // Pastikan ini di-import
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\FollowController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -65,4 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('cart/{id}', [App\Http\Controllers\CartController::class, 'updateQuantity']);
     Route::delete('cart/{id}', [App\Http\Controllers\CartController::class, 'destroy']);
     Route::post('cart/checkout', [App\Http\Controllers\CartController::class, 'checkout']);
+
+    // Fitur Follow
+    Route::post('user/follow', [FollowController::class, 'toggle']);
+    Route::get('user/follow/check/{targetId}', [FollowController::class, 'checkStatus']);
 });
