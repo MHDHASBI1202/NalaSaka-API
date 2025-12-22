@@ -78,4 +78,6 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Testing kirim notifikasi (Hanya untuk testing)
     Route::get('test-notif/{id}', [NotificationController::class, 'sendFollowedStoreNotification']);
+
+    Route::post('seller/broadcast', [NotificationController::class, 'broadcastToFollowers']);
 });
