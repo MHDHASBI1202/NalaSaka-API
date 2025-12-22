@@ -185,6 +185,11 @@ class SakaController extends Controller
         // Ambil user pemilik produk (gunakan relasi yang sudah di-load)
         $seller = $item->user; 
         $isVerified = $seller ? ($seller->verification_status === 'verified') : false;
+        // [LOGIKA BARU] Ambil Nama Toko (jika ada), kalau tidak pakai Nama User
+        $sellerName = $seller ? ($seller->store_name ?? $seller->name) : 'Unknown Seller';
+
+        // [LOGIKA BARU] Ambil Foto Profil atau Avatar Default
+        $sellerPhoto = $seller ? ($seller->photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($sellerName) . '&background=D57B0E&color=fff') : null;
 
         return [
             'id' => (string) $item->id,
@@ -195,8 +200,9 @@ class SakaController extends Controller
             'stock' => (int) $item->stock,
             'photoUrl' => $item->photo_url,
             'sellerId' => (string) $item->user_id,
-            // Kirim status verified ke Android
-            'isSellerVerified' => $isVerified 
+            'isSellerVerified' => $isVerified,
+            'sellerName' => $sellerName,
+            'sellerPhotoUrl' => $sellerPhoto
         ];
     }
 }
