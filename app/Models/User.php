@@ -27,6 +27,7 @@ class User extends Authenticatable
         'store_name', // NEW: Ditambahkan untuk nama toko
         'verification_status',
         'certification_url',
+        'fcm_token'
     ];
 
     /**

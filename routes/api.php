@@ -9,6 +9,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -71,4 +72,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('user/follow', [FollowController::class, 'toggle']);
     Route::get('user/follow/check/{targetId}', [FollowController::class, 'checkStatus']);
     Route::put('/user/address', [UserController::class, 'updateAddress']);
+
+    // Simpan token FCM dari HP
+    Route::post('user/fcm-token', [UserController::class, 'updateFcmToken']);
+    
+    // Testing kirim notifikasi (Hanya untuk testing)
+    Route::get('test-notif/{id}', [NotificationController::class, 'sendFollowedStoreNotification']);
 });

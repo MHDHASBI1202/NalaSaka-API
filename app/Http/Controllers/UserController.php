@@ -186,4 +186,10 @@ class UserController extends Controller
         $user->update(['address' => $request->address]);
         return response()->json(['message' => 'Alamat utama berhasil diperbarui']);
     }
+    
+    public function updateFcmToken(Request $request) {
+        $request->validate(['fcm_token' => 'required|string']);
+        $request->user()->update(['fcm_token' => $request->fcm_token]);
+        return response()->json(['message' => 'Token updated']);
+    }
 }
