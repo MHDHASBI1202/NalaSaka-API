@@ -136,4 +136,21 @@ class NotificationController extends Controller
             'message' => 'Promo berhasil disiarkan ke ' . $followers->count() . ' pengikut!'
         ]);
     }
+
+    public function sendPromoNotification(Request $request)
+    {
+        $user = $request->user();
+        
+        // Cari produk yang punya harga diskon
+        $promoProduct = \App\Models\Saka::whereNotNull('discount_price')->inRandomOrder()->first();
+
+        if (!$promoProduct) {
+            return response()->json(['message' => 'Belum ada produk promo'], 404);
+        }
+
+        $title = "🤑 Promo NalaSaka: " . $promoProduct->name;
+        $body = "Hanya hari ini! Dapatkan harga spesial " . number_format($promoProduct->discount_price, 0, ',', '.') . " (Harga normal: " . number_format($promoProduct->price, 0, ',', '.') . "). Cek sekarang!";
+
+        return $this->sendFCM($user->fcm_token, $title, $body);
+    }
 }

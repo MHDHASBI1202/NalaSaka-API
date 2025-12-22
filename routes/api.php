@@ -80,4 +80,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('test-notif/{id}', [NotificationController::class, 'sendFollowedStoreNotification']);
 
     Route::post('seller/broadcast', [NotificationController::class, 'broadcastToFollowers']);
+
+    Route::post('test-promo-notif', [NotificationController::class, 'sendPromoNotification']);
 });

@@ -11,8 +11,7 @@ class Saka extends Model
     
     protected $table = 'sakas';
     
-    // PERUBAHAN: Tambahkan 'category'
-    protected $fillable = ['user_id', 'name', 'category', 'description', 'price', 'stock', 'photo_url'];
+    protected $fillable = ['user_id', 'name', 'category', 'description', 'price', 'discount_price', 'stock', 'photo_url'];
 
     public function user()
     {
