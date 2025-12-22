@@ -12,6 +12,8 @@ class UserController extends Controller
     {
         $user = $request->user();
         
+
+        $store = \DB::table('stores')->where('user_id', $user->id)->first();
         // Hitung jumlah
         $followersCount = $user->followers()->count();
         $followingCount = $user->following()->count();
@@ -30,6 +32,7 @@ class UserController extends Controller
                 'address' => $user->address,
                 'role' => $user->role ?: 'customer',
                 'storeName' => $user->store_name,
+                'store_address' => $store ? $store->address : null,
                 'verificationStatus' => $user->verification_status ?? 'none',
                 'followersCount' => $followersCount,
                 'followingCount' => $followingCount,
@@ -180,11 +183,33 @@ class UserController extends Controller
 
         return response()->json(['error' => true, 'message' => 'Gagal mengunggah file.'], 400);
     }
-    public function updateAddress(Request $request) {
-        $user = $request->user();
-        $request->validate(['address' => 'required|string']);
-        $user->update(['address' => $request->address]);
-        return response()->json(['message' => 'Alamat utama berhasil diperbarui']);
+        public function updateAddress(Request $request) {
+            $user = $request->user();
+            $request->validate(['address' => 'required|string']);
+            $user->update(['address' => $request->address]);
+            return response()->json(['message' => 'Alamat utama berhasil diperbarui']);
+        }
+        public function updateStoreLocation(Request $request) {
+        $request->validate([
+            'address' => 'required|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        // Simpan atau Update data toko milik user yang sedang login
+        $store = \App\Models\Store::updateOrCreate(
+            ['user_id' => $request->user()->id],
+            [
+                'address' => $request->address,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+            ]
+        );
+
+        return response()->json([
+            'message' => 'Lokasi toko berhasil diperbarui',
+            'data' => $store
+        ]);
     }
     
     public function updateFcmToken(Request $request) {

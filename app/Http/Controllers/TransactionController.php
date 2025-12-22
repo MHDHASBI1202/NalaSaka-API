@@ -94,4 +94,27 @@ class TransactionController extends Controller
         }
         return response()->json(['message' => 'Transaksi tidak ditemukan']);
     }
+    public function sellerOrders(Request $request) {
+    $sellerId = $request->user()->id;
+
+        // Ambil transaksi dimana saka_id dimiliki oleh seller ini
+        $orders = \App\Models\Transaction::whereHas('saka', function($query) use ($sellerId) {
+                $query->where('user_id', $sellerId);
+            })
+            ->with(['user', 'saka']) // Load data pembeli dan produk
+            ->latest()
+            ->get();
+
+        return response()->json($orders->map(function($order) {
+            return [
+                'id' => $order->id,
+                'product_name' => $order->saka->name,
+                'quantity' => $order->quantity,
+                'status' => $order->status,
+                'resi_number' => $order->resi_number,
+                'current_location' => $order->current_location, // Lokasi pengiriman dari pembeli
+                'buyer_name' => $order->user->name
+            ];
+        }));
+    }
 }

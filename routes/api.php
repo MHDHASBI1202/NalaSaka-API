@@ -78,4 +78,8 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Testing kirim notifikasi (Hanya untuk testing)
     Route::get('test-notif/{id}', [NotificationController::class, 'sendFollowedStoreNotification']);
+    Route::post('/store/location', [App\Http\Controllers\UserController::class, 'updateStoreLocation']);
+    
+    // Route baru untuk mendapatkan daftar pesanan seller
+    Route::get('/seller/orders', [App\Http\Controllers\TransactionController::class, 'sellerOrders']);
 });
