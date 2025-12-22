@@ -82,4 +82,8 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Route baru untuk mendapatkan daftar pesanan seller
     Route::get('/seller/orders', [App\Http\Controllers\TransactionController::class, 'sellerOrders']);
+
+    Route::post('seller/broadcast', [NotificationController::class, 'broadcastToFollowers']);
+
+    Route::post('test-promo-notif', [NotificationController::class, 'sendPromoNotification']);
 });

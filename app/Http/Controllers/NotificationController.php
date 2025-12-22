@@ -94,4 +94,63 @@ class NotificationController extends Controller
             ], $response->status());
         }
     }
+
+    public function broadcastToFollowers(Request $request)
+    {
+        $seller = $request->user();
+
+        // 1. Pastikan dia adalah seller
+        if ($seller->role !== 'seller') {
+            return response()->json(['error' => true, 'message' => 'Hanya penjual yang bisa broadcast'], 403);
+        }
+
+        // 2. Validasi 1x24 jam
+        if ($seller->last_broadcast_at && $seller->last_broadcast_at->diffInHours(now()) < 24) {
+            $remainingHours = 24 - $seller->last_broadcast_at->diffInHours(now());
+            return response()->json([
+                'error' => true, 
+                'message' => "Anda baru bisa broadcast lagi dalam $remainingHours jam."
+            ], 429);
+        }
+
+        // 3. Ambil semua followers yang punya fcm_token
+        $followers = $seller->followers()->whereNotNull('fcm_token')->get();
+
+        if ($followers->isEmpty()) {
+            return response()->json(['error' => true, 'message' => 'Belum ada pengikut yang bisa menerima notifikasi'], 400);
+        }
+
+        $title = "Kabar Seru dari " . ($seller->store_name ?: $seller->name);
+        $body = "Ada produk baru atau update menarik di toko kami, Yang Mulia! Cek sekarang.";
+
+        // 4. Kirim ke semua followers
+        foreach ($followers as $follower) {
+            $this->sendFCM($follower->fcm_token, $title, $body);
+        }
+
+        // 5. Update waktu terakhir broadcast
+        $seller->update(['last_broadcast_at' => now()]);
+
+        return response()->json([
+            'error' => false,
+            'message' => 'Promo berhasil disiarkan ke ' . $followers->count() . ' pengikut!'
+        ]);
+    }
+
+    public function sendPromoNotification(Request $request)
+    {
+        $user = $request->user();
+        
+        // Cari produk yang punya harga diskon
+        $promoProduct = \App\Models\Saka::whereNotNull('discount_price')->inRandomOrder()->first();
+
+        if (!$promoProduct) {
+            return response()->json(['message' => 'Belum ada produk promo'], 404);
+        }
+
+        $title = "🤑 Promo NalaSaka: " . $promoProduct->name;
+        $body = "Hanya hari ini! Dapatkan harga spesial " . number_format($promoProduct->discount_price, 0, ',', '.') . " (Harga normal: " . number_format($promoProduct->price, 0, ',', '.') . "). Cek sekarang!";
+
+        return $this->sendFCM($user->fcm_token, $title, $body);
+    }
 }

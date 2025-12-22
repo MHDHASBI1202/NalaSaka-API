@@ -11,9 +11,24 @@ class Kernel extends ConsoleKernel
      * Define the application's command schedule.
      */
     protected function schedule(Schedule $schedule): void
-    {
-        // $schedule->command('inspire')->hourly();
-    }
+{
+    // Kirim notifikasi acak ke SEMUA user yang punya token setiap hari jam 10:00
+    $schedule->call(function () {
+        $users = \App\Models\User::whereNotNull('fcm_token')->get();
+        foreach ($users as $user) {
+            // Panggil fungsi controller yang sudah kita buat
+            app(\App\Http\Controllers\NotificationController::class)->sendFollowedStoreNotification($user->id);
+        }
+    })->dailyAt('10:00');
+
+    // Kirim lagi jam 16:00
+    $schedule->call(function () {
+        $users = \App\Models\User::whereNotNull('fcm_token')->get();
+        foreach ($users as $user) {
+            app(\App\Http\Controllers\NotificationController::class)->sendFollowedStoreNotification($user->id);
+        }
+    })->dailyAt('16:00');
+}
 
     /**
      * Register the commands for the application.
