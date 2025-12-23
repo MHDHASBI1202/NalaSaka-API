@@ -192,4 +192,27 @@ class UserController extends Controller
         $request->user()->update(['fcm_token' => $request->fcm_token]);
         return response()->json(['message' => 'Token updated']);
     }
+    
+    public function updatePhoto(Request $request)
+    {
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $path = $file->store('profile_photos', 'public');
+            $url = url('storage/' . $path);
+
+            $user->update(['photo_url' => $url]);
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Foto profil berhasil diperbarui!',
+                'photoUrl' => $url
+            ]);
+        }
+    }
 }
