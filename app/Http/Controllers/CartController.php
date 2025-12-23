@@ -14,10 +14,13 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $carts = Cart::with('saka')->where('user_id', $user->id)->get();
+        
+        $carts = Cart::where('user_id', $user->id)->get();
 
-        // Format data untuk Android
         $data = $carts->map(function ($item) {
+            $saka = $item->saka;
+            $seller = $saka ? $saka->user : null;
+            $store = $seller ? \DB::table('stores')->where('user_id', $seller->id)->first() : null;
             return [
                 'cart_id' => $item->id,
                 'saka_id' => $item->saka_id,
@@ -27,6 +30,10 @@ class CartController extends Controller
                 'quantity' => $item->quantity,
                 'stock_available' => $item->saka->stock,
                 'store_name' => $item->saka->user->store_name,
+                'storeAddress' => $store ? $store->address : 'Alamat belum diatur',
+                'latitude' => $store ? (double)$store->latitude : 0.0,
+                'longitude' => $store ? (double)$store->longitude : 0.0,
+                
             ];
         });
 

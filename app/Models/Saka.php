@@ -13,6 +13,7 @@ class Saka extends Model
     
     protected $fillable = ['user_id', 'name', 'category', 'description', 'price', 'discount_price', 'stock', 'photo_url'];
 
+    // Cukup tuliskan satu kali saja seperti ini
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
