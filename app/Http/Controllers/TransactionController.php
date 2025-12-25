@@ -18,17 +18,13 @@ class TransactionController extends Controller
             return response()->json(['error' => true, 'message' => 'User ID wajib diisi'], 400);
         }
 
-        // Ambil transaksi milik user tersebut
-        $transactions = Transaction::with('saka') // Include data produknya
+        $transactions = Transaction::with('saka') 
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Format data untuk Android (VERSI AMAN)
         $history = $transactions->map(function($item) {
             
-            // CEK DULU: Apakah produknya (saka) masih ada?
-            // Kalau produk dihapus, kita kasih nama default agar tidak error.
             $productName = $item->saka ? $item->saka->name : 'Produk Tidak Ditemukan';
             $productImage = $item->saka ? $item->saka->photo_url : 'https://placehold.co/100x100?text=No+Image';
 
@@ -38,12 +34,18 @@ class TransactionController extends Controller
                 'productName' => $productName,
                 'productImage' => $productImage,
                 'price' => $item->total_price,
-                'status' => $item->status, 
+                'status' => strtoupper($item->status),
                 'date' => $item->created_at->format('d M Y'),
-                'paymentMethod' => $item->payment_method,
-                'tracking' => [
-                    'location' => $item->current_location ?? 'Belum ada update lokasi',
-                    'resi' => $item->resi_number ?? '-'
+                'shipping_method' => $item->shipping_method,
+            'pickup_code' => $item->pickup_code,
+            'store_name' => $item->saka->user->store->name ?? 'Toko Penjual',
+            'store_address' => $item->saka->user->store->address ?? 'Alamat Toko',
+            'latitude' => $item->latitude ? (double)$item->latitude : 0.0,
+            'longitude' => $item->longitude ? (double)$item->longitude : 0.0,
+            
+            'tracking' => [
+                'location' => $item->current_location ?? 'Diproses',
+                'resi' => $item->resi_number ?? '-'
                 ]
             ];
         });
@@ -83,7 +85,7 @@ class TransactionController extends Controller
                 'subtotal'         => $request->subtotal,
                 'total_price'      => $request->total_price,
                 'shipping_method'  => $request->shipping_method,
-                'status'           => 'processed',
+                'status'           => 'PROSES',
                 'current_location' => 'Diproses Penjual'
             ]);
 
