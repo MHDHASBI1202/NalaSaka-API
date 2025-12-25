@@ -9,7 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            $table->string('pickup_code')->nullable()->after('shipping_method');
+            if (!Schema::hasColumn('transactions', 'pickup_code')) {
+                $table->string('pickup_code')->nullable()->after('shipping_method');
+            }
         });
     }
 

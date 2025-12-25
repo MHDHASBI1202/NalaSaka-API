@@ -38,7 +38,7 @@ class UserAndProductSeeder extends Seeder
             'description' => 'Bayam organik langsung petik.',
             'price' => 5000,
             'stock' => 50,
-            'photo_url' => 'https://api.nalasaka.com/storage/sakas/bayam.jpg',
+            'photo_url' => 'Sbc3a4643d5d1476ea30ab9f328da620c0.jpg',
         ]);
 
         Saka::create([
@@ -49,7 +49,7 @@ class UserAndProductSeeder extends Seeder
             'price' => 45000,
             'discount_price' => 30000,
             'stock' => 20,
-            'photo_url' => 'https://api.nalasaka.com/storage/sakas/apel.jpg',
+            'photo_url' => '22268c378ba3f8812bb9280e27ff17e0.jpg_720x720q80.jpg',
         ]);
         
         $this->command->info('Akun dan Produk Promo berhasil disiapkan, Yang Mulia!');
