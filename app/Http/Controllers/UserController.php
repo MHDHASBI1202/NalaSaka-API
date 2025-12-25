@@ -7,14 +7,12 @@ use App\Models\User;
 
 class UserController extends Controller
 {
-    // Merespons GET /api/user/profile
     public function profile(Request $request)
     {
         $user = $request->user();
         
 
         $store = \DB::table('stores')->where('user_id', $user->id)->first();
-        // Hitung jumlah
         $followersCount = $user->followers()->count();
         $followingCount = $user->following()->count();
 
@@ -40,7 +38,6 @@ class UserController extends Controller
         ]);
     }
     
-    // Merespons PATCH /api/user/profile untuk update profil
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -49,11 +46,9 @@ class UserController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'phone_number' => 'sometimes|required|string|max:15',
             'address' => 'sometimes|required|string|max:255',
-            // store_name opsional, hanya divalidasi jika user sudah jadi seller
             'store_name' => 'sometimes|nullable|string|max:255|unique:users,store_name,'.$user->id,
         ]);
         
-        // Jika user adalah seller, kita izinkan update store_name
         if ($user->role === 'seller' && isset($validated['store_name'])) {
             $user->store_name = $validated['store_name'];
             unset($validated['store_name']);
@@ -61,10 +56,8 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        // Pastikan photoUrl juga dikirim di response update agar konsisten
         $photoUrl = $user->photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=D57B0E&color=fff';
 
-        // Ambil data terbaru untuk dikembalikan ke klien
         return response()->json([
             'error' => false,
             'message' => 'Profil berhasil diperbarui.',
@@ -82,12 +75,10 @@ class UserController extends Controller
         ]);
     }
 
-    // Merespons POST /api/user/activate-seller
     public function activateSellerMode(Request $request)
     {
         $user = $request->user();
 
-        // Cek apakah user sudah jadi seller
         if ($user->role === 'seller') {
             $photoUrl = $user->photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=D57B0E&color=fff';
             
@@ -108,12 +99,10 @@ class UserController extends Controller
             ], 400); 
         }
 
-        // Validasi input untuk nama toko
         $validated = $request->validate([
             'store_name' => 'required|string|max:255|unique:users,store_name',
         ]);
         
-        // Update role menjadi 'seller' dan simpan nama toko
         $user->update([
             'role' => 'seller',
             'store_name' => $validated['store_name']
@@ -121,7 +110,6 @@ class UserController extends Controller
 
         $photoUrl = $user->photo_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=D57B0E&color=fff';
 
-        // Ambil data terbaru untuk dikembalikan ke klien
         return response()->json([
             'error' => false,
             'message' => 'Mode penjual berhasil diaktifkan.',
@@ -141,12 +129,10 @@ class UserController extends Controller
         
     }
 
-    // Merespons POST /api/user/upload-certification
     public function uploadCertification(Request $request)
     {
         $user = $request->user();
 
-        // Validasi: Hanya role seller yang butuh verifikasi
         if ($user->role !== 'seller') {
             return response()->json(['error' => true, 'message' => 'Hanya penjual yang dapat mengajukan verifikasi.'], 403);
         }
@@ -162,21 +148,20 @@ class UserController extends Controller
 
             $user->update([
                 'certification_url' => $url,
-                'verification_status' => 'verified' // [SIMULASI] Langsung verified agar bisa langsung dites di Android
+                'verification_status' => 'verified'
             ]);
 
             return response()->json([
                 'error' => false,
                 'message' => 'Dokumen berhasil diunggah! Akun Anda kini Terverifikasi.',
                 'user' => [
-                    // Return data user terupdate (sama seperti response profile)
                     'userId' => (string) $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'photoUrl' => $user->photo_url,
                     'role' => $user->role,
                     'storeName' => $user->store_name,
-                    'verificationStatus' => $user->verification_status // Kirim status baru
+                    'verificationStatus' => $user->verification_status
                 ]
             ]);
         }
@@ -196,7 +181,6 @@ class UserController extends Controller
             'longitude' => 'required|numeric',
         ]);
 
-        // Simpan atau Update data toko milik user yang sedang login
         $store = \App\Models\Store::updateOrCreate(
             ['user_id' => $request->user()->id],
             [

@@ -16,13 +16,11 @@ class Transaction extends Model
     'current_location', 'pickup_code', 'resi_number'
 ];
 
-    // Relasi: Transaksi milik satu Produk (Saka)
     public function saka()
     {
         return $this->belongsTo(Saka::class, 'saka_id');
     }
 
-    // Relasi: Transaksi milik satu User
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');

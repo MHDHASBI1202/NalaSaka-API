@@ -9,10 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Menambahkan kolom role dengan default 'customer'
             $table->enum('role', ['customer', 'seller'])->default('customer')->after('password'); 
             
-            // Menambahkan kolom store_name, diizinkan null
             $table->string('store_name')->nullable()->after('role')->unique(); 
         });
     }

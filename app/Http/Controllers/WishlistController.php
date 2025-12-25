@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 
 class WishlistController extends Controller
 {
-    // Toggle: Jika belum ada -> Tambah. Jika sudah ada -> Hapus.
     public function toggle(Request $request)
     {
         $request->validate([
@@ -41,7 +40,6 @@ class WishlistController extends Controller
         }
     }
 
-    // Cek status wishlist untuk UI Detail Page
     public function check($sakaId, Request $request)
     {
         $user = $request->user();
@@ -55,13 +53,11 @@ class WishlistController extends Controller
         ]);
     }
 
-    // Ambil semua list wishlist user (Untuk halaman Wishlist nanti)
     public function index(Request $request)
     {
         $user = $request->user();
         $wishlists = Wishlist::with('saka')->where('user_id', $user->id)->get();
 
-        // Format data agar sama dengan struktur saka biasa
         $listSaka = $wishlists->map(function($item) {
             return [
                 'id' => (string) $item->saka->id,

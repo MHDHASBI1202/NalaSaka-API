@@ -9,7 +9,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Status: 'none', 'pending', 'verified', 'rejected'
             $table->string('verification_status')->default('none')->after('store_name');
             $table->string('certification_url')->nullable()->after('verification_status');
         });

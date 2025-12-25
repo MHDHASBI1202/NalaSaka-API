@@ -9,7 +9,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sakas', function (Blueprint $table) {
-            // Menambahkan kolom stock dengan default 0
             $table->integer('stock')->default(0)->after('price');
         });
     }

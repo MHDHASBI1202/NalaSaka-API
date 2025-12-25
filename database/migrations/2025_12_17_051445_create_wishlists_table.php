@@ -14,11 +14,9 @@ return new class extends Migration
             $table->unsignedBigInteger('saka_id');
             $table->timestamps();
 
-            // Foreign Keys
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('saka_id')->references('id')->on('sakas')->onDelete('cascade');
 
-            // Mencegah duplikasi (satu user hanya bisa like satu produk sekali)
             $table->unique(['user_id', 'saka_id']);
         });
     }

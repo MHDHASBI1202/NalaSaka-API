@@ -19,13 +19,11 @@ class Review extends Model
         'image_url'
     ];
 
-    // Relasi: Review milik satu User
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    // Relasi: Review milik satu Produk (Saka)
     public function saka()
     {
         return $this->belongsTo(Saka::class, 'saka_id');

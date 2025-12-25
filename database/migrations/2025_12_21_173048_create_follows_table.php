@@ -10,15 +10,13 @@ return new class extends Migration
     {
         Schema::create('follows', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('follower_id'); // User yang mengklik tombol follow
-            $table->unsignedBigInteger('followed_id'); // User (biasanya Seller) yang diikuti
+            $table->unsignedBigInteger('follower_id');
+            $table->unsignedBigInteger('followed_id');
             $table->timestamps();
 
-            // Foreign keys
             $table->foreign('follower_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('followed_id')->references('id')->on('users')->onDelete('cascade');
 
-            // Mencegah duplikasi (User A tidak bisa follow User B dua kali)
             $table->unique(['follower_id', 'followed_id']);
         });
     }

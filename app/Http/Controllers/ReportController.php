@@ -11,10 +11,8 @@ class ReportController extends Controller
 {
     public function downloadReport(Request $request)
     {
-        // 1. Ambil User (Bisa dari Sanctum atau Query Param token)
         $user = auth('sanctum')->user();
 
-        // Fallback: Cek token manual jika akses dari browser langsung
         if (!$user && $request->query('token')) {
             $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($request->query('token'));
             if ($accessToken) {
@@ -26,7 +24,6 @@ class ReportController extends Controller
             return response()->json(['message' => 'Unauthorized Access'], 401);
         }
 
-        // 2. Ambil Data
         $startDate = Carbon::now()->startOfMonth();
         $endDate = Carbon::now()->endOfMonth();
 
@@ -42,7 +39,6 @@ class ReportController extends Controller
         $totalRevenue = $transactions->sum('total_price');
         $totalSold = $transactions->sum('quantity');
 
-        // 3. Render PDF
         $data = [
             'title' => 'Laporan Penjualan NalaSaka',
             'date' => Carbon::now()->format('d F Y'),
@@ -53,7 +49,6 @@ class ReportController extends Controller
             'totalSold' => $totalSold
         ];
 
-        // Pastikan view 'reports.sales_report' sudah dibuat di resources/views/reports/
         $pdf = Pdf::loadView('reports.sales_report', $data);
         
         return $pdf->download('laporan_penjualan.pdf');

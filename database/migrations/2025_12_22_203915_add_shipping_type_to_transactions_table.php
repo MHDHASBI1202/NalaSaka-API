@@ -6,23 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            //
+            if (!Schema::hasColumn('transactions', 'shipping_type')) {
+                $table->string('shipping_type')->default('Diantar')->after('status');
+            }
+            
+            if (!Schema::hasColumn('transactions', 'pickup_code')) {
+                $table->string('pickup_code')->nullable()->after('shipping_type');
+            }
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('transactions', function (Blueprint $table) {
-            //
+            $table->dropColumn(['shipping_type', 'pickup_code']);
         });
     }
 };

@@ -14,7 +14,6 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // 1. Ringkasan Total (Tetap Sama)
         $revenue = Transaction::whereHas('saka', function($q) use ($user) {
             $q->where('user_id', $user->id);
         })->whereIn('status', ['SELESAI', 'DIKIRIM', 'DIPROSES'])->sum('total_price');
@@ -25,7 +24,6 @@ class DashboardController extends Controller
 
         $totalProducts = Saka::where('user_id', $user->id)->count();
 
-        // 2. Data Grafik Harian (Tetap Sama)
         $sevenDaysAgo = Carbon::now()->subDays(6)->startOfDay();
         $dailySalesRaw = Transaction::whereHas('saka', function($q) use ($user) {
                 $q->where('user_id', $user->id);
@@ -50,12 +48,9 @@ class DashboardController extends Controller
             ];
         }
 
-        // 3. [BARU] Performa Tiap Produk
-        // Ambil semua produk user, hitung statistik penjualannya
         $allProducts = Saka::where('user_id', $user->id)->get();
         
         $productPerformance = $allProducts->map(function($saka) {
-            // Ambil transaksi valid untuk produk ini
             $validTrans = Transaction::where('saka_id', $saka->id)
                 ->whereIn('status', ['SELESAI', 'DIKIRIM', 'DIPROSES'])
                 ->get();
@@ -67,8 +62,8 @@ class DashboardController extends Controller
                 'total_revenue' => (int) $validTrans->sum('total_price')
             ];
         })
-        ->sortByDesc('sold_qty') // Urutkan dari yang paling laku
-        ->values(); // Reset index array
+        ->sortByDesc('sold_qty') 
+        ->values(); 
 
         return response()->json([
             'error' => false,
@@ -78,7 +73,7 @@ class DashboardController extends Controller
                 'sold' => (int) $soldItems,
                 'product_count' => (int) $totalProducts,
                 'daily_sales' => $chartData,
-                'product_performance' => $productPerformance // Kirim data baru
+                'product_performance' => $productPerformance
             ]
         ]);
     }

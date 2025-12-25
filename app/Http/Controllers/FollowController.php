@@ -7,7 +7,6 @@ use App\Models\User;
 
 class FollowController extends Controller
 {
-    // Toggle Follow (Kalau belum follow -> jadi follow, kalau sudah -> unfollow)
     public function toggle(Request $request)
     {
         $request->validate([
@@ -21,7 +20,6 @@ class FollowController extends Controller
             return response()->json(['error' => true, 'message' => 'Tidak bisa mengikuti diri sendiri.'], 400);
         }
 
-        // Cek apakah sudah follow
         $isFollowing = $me->following()->where('followed_id', $targetId)->exists();
 
         if ($isFollowing) {
@@ -41,7 +39,6 @@ class FollowController extends Controller
         ]);
     }
 
-    // Cek status follow (untuk tombol di UI Detail Produk)
     public function checkStatus($targetId, Request $request)
     {
         $me = $request->user();

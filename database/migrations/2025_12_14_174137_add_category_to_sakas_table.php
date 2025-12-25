@@ -9,7 +9,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sakas', function (Blueprint $table) {
-            // Tambah kolom category setelah name
             $table->string('category')->default('Sayur')->after('name'); 
         });
     }
