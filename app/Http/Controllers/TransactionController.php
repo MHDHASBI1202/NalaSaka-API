@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\User;
+use App\Http\Controllers\NotificationController;
 use App\Models\Transaction;
 use App\Models\Saka;
 use Illuminate\Http\Request;
@@ -57,13 +58,9 @@ class TransactionController extends Controller
         ]);
     }
 
-    // 2. BUAT PESANAN BARU (Checkout / Pesan Ulang)
-    // POST /api/transactions
     public function store(Request $request) {
-        // Ambil user yang sedang login dari Token
         $user = $request->user(); 
 
-        // 1. Validasi (Hapus 'user_id' dari sini agar tidak error 400)
         $request->validate([
             'saka_id'        => 'required',
             'quantity'       => 'required|integer',
@@ -75,9 +72,8 @@ class TransactionController extends Controller
         ]);
 
         try {
-            // 2. Simpan ke Database
             $transaction = Transaction::create([
-                'user_id'          => $user->id, // Diambil otomatis dari sistem login
+                'user_id'          => $user->id, 
                 'saka_id'          => $request->saka_id,
                 'quantity'         => $request->quantity,
                 'payment_method'   => $request->payment_method,
@@ -89,12 +85,10 @@ class TransactionController extends Controller
                 'current_location' => 'Diproses Penjual'
             ]);
 
-            // 3. Hapus item dari Cart (Sinkronisasi agar cart kosong)
             \App\Models\Cart::where('user_id', $user->id)
                             ->where('saka_id', $request->saka_id)
                             ->delete();
 
-            // --- 4. KIRIM NOTIFIKASI KE SELLER (Logic Firebase) ---
             $this->sendNotificationToSeller($transaction);
 
             return response()->json([
@@ -110,28 +104,56 @@ class TransactionController extends Controller
             ], 500);
         }
     }
-    
-    // 3. UPDATE STATUS (Untuk Simulasi Admin/Kurir Update Lokasi)
-    // POST /api/transactions/update/{id}
+
     public function updateStatus(Request $request, $id) {
-        $trx = Transaction::find($id);
-        if($trx) {
-            $trx->update([
-                'status' => $request->status ?? $trx->status,
-                'current_location' => $request->location ?? $trx->current_location
-            ]);
-            return response()->json(['message' => 'Status berhasil diupdate']);
-        }
-        return response()->json(['message' => 'Transaksi tidak ditemukan']);
+    $trx = Transaction::with('user')->find($id);
+
+    if (!$trx) {
+        return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
     }
+
+    $statusInput = $request->input('status'); 
+    
+    if (!$statusInput) {
+        return response()->json([
+            'error' => true,
+            'message' => 'Data status wajib dikirim melalui Body Postman'
+        ], 400);
+    }
+
+    $oldStatus = strtoupper($trx->status);
+    $newStatus = strtoupper($statusInput);
+
+    $trx->update([
+        'status' => $newStatus,
+        'current_location' => $request->location ?? $trx->current_location
+    ]);
+
+    if ($oldStatus === 'PROSES' && $newStatus === 'DIKIRIM') {
+        if ($trx->user && $trx->user->fcm_token) {
+            try {
+                $notif = new NotificationController();
+                $notif->sendShippingNotification($trx->user, $trx->id);
+            } catch (\Exception $e) {
+                \Log::error("Gagal kirim notif: " . $e->getMessage());
+            }
+        }
+    }
+
+    return response()->json([
+        'error' => false,
+        'message' => 'Status berhasil diperbarui menjadi ' . $newStatus,
+        'data' => $trx
+    ]);
+}
+
     public function sellerOrders(Request $request) {
     $sellerId = $request->user()->id;
 
-        // Ambil transaksi dimana saka_id dimiliki oleh seller ini
         $orders = \App\Models\Transaction::whereHas('saka', function($query) use ($sellerId) {
                 $query->where('user_id', $sellerId);
             })
-            ->with(['user', 'saka']) // Load data pembeli dan produk
+            ->with(['user', 'saka']) 
             ->latest()
             ->get();
 
@@ -142,14 +164,15 @@ class TransactionController extends Controller
                 'quantity' => $order->quantity,
                 'status' => $order->status,
                 'resi_number' => $order->resi_number,
-                'current_location' => $order->current_location, // Lokasi pengiriman dari pembeli
+                'current_location' => $order->current_location,
                 'buyer_name' => $order->user->name
             ];
         }));
     }
+
+
     private function sendNotificationToSeller($transaction) {
         try {
-            // Cari produk dan penjualnya
             $product = \App\Models\Saka::find($transaction->saka_id);
             $seller = \App\Models\User::find($product->user_id);
 

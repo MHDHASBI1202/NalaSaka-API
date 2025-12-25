@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
-    // 1. LIHAT KERANJANG
     public function index(Request $request)
 {
     $user = $request->user();
@@ -50,7 +49,6 @@ class CartController extends Controller
     ]);
 }
 
-    // 2. TAMBAH KE KERANJANG
     public function addToCart(Request $request)
     {
         $request->validate([
@@ -61,23 +59,19 @@ class CartController extends Controller
         $user = $request->user();
         $qty = $request->quantity ?? 1;
 
-        // Cek stok dulu
         $saka = Saka::find($request->saka_id);
         if ($saka->stock < $qty) {
             return response()->json(['error' => true, 'message' => 'Stok tidak mencukupi'], 400);
         }
 
-        // Cek apakah barang sudah ada di keranjang?
         $cart = Cart::where('user_id', $user->id)
                     ->where('saka_id', $request->saka_id)
                     ->first();
 
         if ($cart) {
-            // Update quantity
             $cart->quantity += $qty;
             $cart->save();
         } else {
-            // Buat baru
             Cart::create([
                 'user_id' => $user->id,
                 'saka_id' => $request->saka_id,
@@ -88,7 +82,6 @@ class CartController extends Controller
         return response()->json(['error' => false, 'message' => 'Masuk keranjang!']);
     }
 
-    // 3. UPDATE JUMLAH ITEM (+ / -)
     public function updateQuantity(Request $request, $id)
     {
         $cart = Cart::find($id);
@@ -97,9 +90,8 @@ class CartController extends Controller
         $newQty = $request->quantity;
         
         if ($newQty <= 0) {
-            $cart->delete(); // Hapus jika 0
+            $cart->delete();
         } else {
-            // Cek stok real-time
             if ($cart->saka->stock < $newQty) {
                 return response()->json(['error' => true, 'message' => 'Stok max tercapai'], 400);
             }
@@ -110,18 +102,16 @@ class CartController extends Controller
         return response()->json(['error' => false, 'message' => 'Updated']);
     }
 
-    // 4. HAPUS ITEM
     public function destroy($id)
     {
         Cart::destroy($id);
         return response()->json(['error' => false, 'message' => 'Item dihapus']);
     }
 
-    // 5. CHECKOUT SEMUA (Transaksi Masal)
     public function checkout(Request $request)
     {
         $request->validate([
-            'payment_method' => 'required|in:CASH,TRANSFER,EWALLET', // Validasi input
+            'payment_method' => 'required|in:CASH,TRANSFER,EWALLET',
         ]);
 
         $user = $request->user();
@@ -134,15 +124,11 @@ class CartController extends Controller
         DB::beginTransaction();
         try {
             foreach ($cartItems as $item) {
-                // Cek stok terakhir
                 if ($item->saka->stock < $item->quantity) {
                     throw new \Exception("Stok {$item->saka->name} habis/kurang.");
                 }
-
-                // Kurangi Stok Produk
                 $item->saka->decrement('stock', $item->quantity);
 
-                // Buat Transaksi
                 Transaction::create([
                     'user_id' => $user->id,
                     'saka_id' => $item->saka_id,
@@ -154,7 +140,6 @@ class CartController extends Controller
                 ]);
             }
 
-            // Kosongkan Keranjang setelah sukses semua
             Cart::where('user_id', $user->id)->delete();
 
             DB::commit();
@@ -169,7 +154,6 @@ class CartController extends Controller
         public function store(Request $request) {
         $user = $request->user();
 
-        // 1. Validasi data (Samakan dengan field yang dikirim dari Logcat Android Anda)
         $request->validate([
             'saka_id' => 'required',
             'quantity' => 'required|integer',
@@ -181,8 +165,6 @@ class CartController extends Controller
         ]);
 
         try {
-            // 2. Simpan Transaksi
-            // Pastikan kolom-kolom ini sudah ada di migration transactions Anda!
             $transaction = Transaction::create([
                 'user_id' => $user->id,
                 'saka_id' => $request->saka_id,
@@ -196,12 +178,10 @@ class CartController extends Controller
                 'current_location' => 'Diproses Penjual'
             ]);
 
-            // 3. Hapus item dari Cart setelah transaksi berhasil
             \App\Models\Cart::where('user_id', $user->id)
                             ->where('saka_id', $request->saka_id)
                             ->delete();
 
-            // 4. Logika Notifikasi (Bungkus dengan TRY-CATCH agar jika notif gagal, transaksi tetap sukses)
             try {
                 $product = \App\Models\Saka::find($request->saka_id);
                 if ($product && $product->user && $product->user->fcm_token) {
@@ -214,7 +194,6 @@ class CartController extends Controller
                     $messaging->send($message);
                 }
             } catch (\Exception $e) {
-                // Biarkan saja jika notif gagal, yang penting transaksi masuk
                 \Log::error("FCM Error: " . $e->getMessage());
             }
 

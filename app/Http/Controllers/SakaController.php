@@ -9,18 +9,12 @@ use Illuminate\Support\Facades\Storage;
 
 class SakaController extends Controller
 {
-    /**
-     * Menampilkan semua produk dengan opsi Sorting
-     * GET /api/saka?sort=price_asc
-     */
     public function index(Request $request)
     {
         $sort = $request->query('sort');
 
-        // Eager Loading relasi user
         $query = Saka::with('user');
 
-        // Logika Sorting
         if ($sort === 'price_asc') {
             $query->orderBy('price', 'asc');
         } elseif ($sort === 'price_desc') {
@@ -42,9 +36,6 @@ class SakaController extends Controller
         ], 200);
     }
 
-    /**
-     * Menampilkan produk milik seller yang sedang login
-     */
     public function myProducts(Request $request)
     {
         $user = $request->user();
@@ -61,9 +52,6 @@ class SakaController extends Controller
         ]);
     }
 
-    /**
-     * Menampilkan detail satu produk
-     */
     public function show($id)
     {
         $saka = Saka::find($id);
@@ -78,10 +66,7 @@ class SakaController extends Controller
         ], 200);
     }
 
-    /**
-     * Tambah Produk Baru (Oleh Seller)
-     * POST /api/saka
-     */
+    
     public function store(Request $request)
     {
         $user = $request->user();
@@ -90,13 +75,12 @@ class SakaController extends Controller
             return response()->json(['error' => true, 'message' => 'Hanya akun Penjual yang boleh mengunggah barang.'], 403);
         }
 
-        // VALIDASI TERMASUK DISKON
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'category' => 'required|string',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price', // Harus lebih kecil dari harga normal
+            'discount_price' => 'nullable|numeric|min:0|lt:price', 
             'stock' => 'required|integer|min:0',
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ], [
@@ -107,7 +91,6 @@ class SakaController extends Controller
             return response()->json(['error' => true, 'message' => $validator->errors()->first()], 400);
         }
 
-        // Handle Upload Foto
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
             $path = $file->store('sakas', 'public'); 
@@ -116,14 +99,13 @@ class SakaController extends Controller
             return response()->json(['error' => true, 'message' => 'File foto wajib diunggah'], 400);
         }
 
-        // SIMPAN KE DATABASE
         $saka = Saka::create([
             'user_id' => $user->id,
             'name' => $request->name,
             'category' => $request->category,
             'description' => $request->description,
             'price' => $request->price,
-            'discount_price' => $request->discount_price, // DATA DISKON DISIMPAN DISINI
+            'discount_price' => $request->discount_price, 
             'stock' => $request->stock,
             'photo_url' => $photoUrl,
         ]);
@@ -135,9 +117,6 @@ class SakaController extends Controller
         ], 201);
     }
 
-    /**
-     * Update Stok Barang
-     */
     public function updateStock(Request $request, $id)
     {
         $user = $request->user();
@@ -168,9 +147,6 @@ class SakaController extends Controller
         ]);
     }
 
-    /**
-     * Hapus Barang
-     */
     public function destroy(Request $request, $id)
     {
         $user = $request->user();
@@ -192,9 +168,6 @@ class SakaController extends Controller
         ]);
     }
 
-    /**
-     * Helper Private untuk format JSON output agar sinkron dengan Android
-     */
     private function formatSaka($item) {
         $seller = $item->user; 
         $isVerified = $seller ? ($seller->verification_status === 'verified') : false;
@@ -207,7 +180,7 @@ class SakaController extends Controller
             'category' => $item->category,
             'description' => $item->description,
             'price' => (int) $item->price,
-            'discountPrice' => $item->discount_price ? (int) $item->discount_price : null, // KIRIM KE ANDROID
+            'discountPrice' => $item->discount_price ? (int) $item->discount_price : null,
             'stock' => (int) $item->stock,
             'photoUrl' => $item->photo_url,
             'sellerId' => (string) $item->user_id,

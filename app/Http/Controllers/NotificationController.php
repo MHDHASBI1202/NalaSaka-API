@@ -10,13 +10,8 @@ use Google\Auth\HttpHandler\HttpHandlerFactory;
 
 class NotificationController extends Controller
 {
-    /**
-     * Trigger Notifikasi Manual untuk Testing
-     * GET /api/test-notif/{userId}
-     */
     public function sendFollowedStoreNotification($userId)
     {
-        // Load user beserta toko yang di-follow
         $user = User::with('following')->find($userId);
         
         if (!$user) {
@@ -31,7 +26,6 @@ class NotificationController extends Controller
             return response()->json(['error' => true, 'message' => 'User tidak mengikuti toko manapun'], 400);
         }
             
-        // Ambil 1 toko secara acak dari yang di-follow
         $randomStore = $user->following->random();
 
         $title = "Kabar dari " . ($randomStore->store_name ?: $randomStore->name);
@@ -40,9 +34,6 @@ class NotificationController extends Controller
         return $this->sendFCM($user->fcm_token, $title, $body);
     }
 
-    /**
-     * Fungsi Inti Pengiriman FCM menggunakan HTTP v1 API
-     */
     private function sendFCM($fcmToken, $title, $body)
     {
         $filePath = storage_path('app/firebase-auth.json');
@@ -51,16 +42,13 @@ class NotificationController extends Controller
             return response()->json(['error' => true, 'message' => 'File firebase-auth.json tidak ditemukan di storage/app'], 500);
         }
 
-        // 1. Authentikasi dengan Google Service Account
         $scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
         $credentials = new ServiceAccountCredentials($scopes, $filePath);
         $accessToken = $credentials->fetchAuthToken(HttpHandlerFactory::build())['access_token'];
 
-        // 2. Ambil Project ID dari file JSON
         $projectInfo = json_decode(file_get_contents($filePath), true);
         $projectId = $projectInfo['project_id'];
 
-        // 3. Susun Payload Notifikasi
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
         
         $data = [
@@ -71,13 +59,12 @@ class NotificationController extends Controller
                     "body" => $body
                 ],
                 "data" => [
-                    "type" => "promo", // Data tambahan untuk navigasi di Android jika perlu
+                    "type" => "promo",
                     "store_id" => "123"
                 ]
             ]
         ];
 
-        // 4. Kirim Request ke Firebase
         $response = Http::withToken($accessToken)->post($url, $data);
 
         if ($response->successful()) {
@@ -99,12 +86,10 @@ class NotificationController extends Controller
     {
         $seller = $request->user();
 
-        // 1. Pastikan dia adalah seller
         if ($seller->role !== 'seller') {
             return response()->json(['error' => true, 'message' => 'Hanya penjual yang bisa broadcast'], 403);
         }
 
-        // 2. Validasi 1x24 jam
         if ($seller->last_broadcast_at && $seller->last_broadcast_at->diffInHours(now()) < 24) {
             $remainingHours = 24 - $seller->last_broadcast_at->diffInHours(now());
             return response()->json([
@@ -113,7 +98,6 @@ class NotificationController extends Controller
             ], 429);
         }
 
-        // 3. Ambil semua followers yang punya fcm_token
         $followers = $seller->followers()->whereNotNull('fcm_token')->get();
 
         if ($followers->isEmpty()) {
@@ -123,12 +107,10 @@ class NotificationController extends Controller
         $title = "Kabar Seru dari " . ($seller->store_name ?: $seller->name);
         $body = "Ada produk baru atau update menarik di toko kami, Yang Mulia! Cek sekarang.";
 
-        // 4. Kirim ke semua followers
         foreach ($followers as $follower) {
             $this->sendFCM($follower->fcm_token, $title, $body);
         }
 
-        // 5. Update waktu terakhir broadcast
         $seller->update(['last_broadcast_at' => now()]);
 
         return response()->json([
@@ -141,7 +123,6 @@ class NotificationController extends Controller
     {
         $user = $request->user();
         
-        // Cari produk yang punya harga diskon
         $promoProduct = \App\Models\Saka::whereNotNull('discount_price')->inRandomOrder()->first();
 
         if (!$promoProduct) {
@@ -152,5 +133,14 @@ class NotificationController extends Controller
         $body = "Hanya hari ini! Dapatkan harga spesial " . number_format($promoProduct->discount_price, 0, ',', '.') . " (Harga normal: " . number_format($promoProduct->price, 0, ',', '.') . "). Cek sekarang!";
 
         return $this->sendFCM($user->fcm_token, $title, $body);
+    }
+    public function sendShippingNotification($buyer, $invoiceId)
+    {
+        if (!$buyer || !$buyer->fcm_token) return;
+
+        $title = "Pesanan Dikirim! 🚚";
+        $body = "Kabar gembira, Yang Mulia! Barang Anda sedang di jalan. Mohon ditunggu ya!";
+
+        return $this->sendFCM($buyer->fcm_token, $title, $body);
     }
 }
